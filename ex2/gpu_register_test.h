@@ -3,4 +3,4 @@
 #pragma once
 #include <cstddef>
 
-void run_compute_benchmark(int N);
+void run_compute_benchmark();

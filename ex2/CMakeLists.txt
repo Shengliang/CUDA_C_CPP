@@ -9,6 +9,7 @@ add_executable(cuda_cpp
     main.cpp
     gpu_memory_test.cu
     gpu_register_test.cu
+    cpu_add_test.cpp
 )
 
 set_target_properties(cuda_cpp PROPERTIES

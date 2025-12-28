@@ -1,55 +1,67 @@
 
-#include "common.h"
-#include "gpu_memory_test.h"
+// gpu_memory_test.cu
 #include <cuda_runtime.h>
 #include <cstdio>
 
-__global__ void memory_add_kernel(const int* a, const int* b, int* c, int N, int repeats) {
-    size_t idx = threadIdx.x + blockIdx.x * blockDim.x;
+__global__ void mem_add_kernel(const int* a, const int* b, int* c, size_t N)
+{
+    size_t idx = blockIdx.x * blockDim.x + threadIdx.x;
     size_t stride = blockDim.x * gridDim.x;
-    for(int r=0; r<repeats; r++){
-        for(size_t i=idx;i<N;i+=stride){
-            c[i] = a[i]+b[i];
-        }
+
+    for (size_t i = idx; i < N; i += stride) {
+        c[i] = a[i] + b[i];
     }
 }
 
-void run_memory_benchmark(int N){
-    int *a,*b,*c;
-    checkCuda(cudaMalloc(&a,N*sizeof(int)),"Alloc a");
-    checkCuda(cudaMalloc(&b,N*sizeof(int)),"Alloc b");
-    checkCuda(cudaMalloc(&c,N*sizeof(int)),"Alloc c");
-    checkCuda(cudaMemset(a,1,N*sizeof(int)),"Memset a");
-    checkCuda(cudaMemset(b,2,N*sizeof(int)),"Memset b");
+void run_gpu_memory_test()
+{
+    constexpr size_t N = 1ull << 26;  // 67,108,864 ints (~256 MB total traffic)
+    constexpr int THREADS = 256;
+    constexpr int BLOCKS  = 256;
+    constexpr int ITERS   = 50;
 
-    dim3 threads(512);
-    dim3 blocks((N+threads.x-1)/threads.x);
-    int repeats=32;
+    int *d_a, *d_b, *d_c;
+    cudaMalloc(&d_a, N * sizeof(int));
+    cudaMalloc(&d_b, N * sizeof(int));
+    cudaMalloc(&d_c, N * sizeof(int));
+
+    cudaMemset(d_a, 1, N * sizeof(int));
+    cudaMemset(d_b, 2, N * sizeof(int));
+
+    // --- Warm-up (critical) ---
+    mem_add_kernel<<<BLOCKS, THREADS>>>(d_a, d_b, d_c, N);
+    cudaDeviceSynchronize();
 
     cudaEvent_t start, stop;
     cudaEventCreate(&start);
     cudaEventCreate(&stop);
 
     cudaEventRecord(start);
-    memory_add_kernel<<<blocks,threads>>>(a,b,c,N,repeats);
+    for (int i = 0; i < ITERS; i++) {
+        mem_add_kernel<<<BLOCKS, THREADS>>>(d_a, d_b, d_c, N);
+    }
     cudaEventRecord(stop);
     cudaEventSynchronize(stop);
 
     float ms;
-    cudaEventElapsedTime(&ms,start,stop);
-    double gops = double(N)*repeats/(ms/1000.0)/1e9;
+    cudaEventElapsedTime(&ms, start, stop);
+    ms /= ITERS;
 
-    int first,last;
-    checkCuda(cudaMemcpy(&first,c,sizeof(int),cudaMemcpyDeviceToHost),"Copy first");
-    checkCuda(cudaMemcpy(&last,c+N-1,sizeof(int),cudaMemcpyDeviceToHost),"Copy last");
+    double ops = double(N);
+    double gops = ops / (ms * 1e6);
 
     printf("\n--- Memory-bound GPU ADD ---\n");
-    printf("Array size: %zu elements\n",N);
-    printf("Kernel time (ms): %10.3f, Throughput: %7.3f Gops/s\n",ms,gops);
-    printf("Sample result c[0]=%d, c[N-1]=%d\n",first,last);
+    printf("Array size: %zu elements\n", N);
+    printf("Kernel time (ms): %7.3f, Throughput: %7.2f Gops/s\n",
+           ms, gops);
 
-    cudaFree(a);
-    cudaFree(b);
-    cudaFree(c);
+    int h0, h1;
+    cudaMemcpy(&h0, d_c, sizeof(int), cudaMemcpyDeviceToHost);
+    cudaMemcpy(&h1, d_c + N - 1, sizeof(int), cudaMemcpyDeviceToHost);
+    printf("Sample result c[0]=%d, c[N-1]=%d\n", h0, h1);
+
+    cudaFree(d_a);
+    cudaFree(d_b);
+    cudaFree(d_c);
 }
 

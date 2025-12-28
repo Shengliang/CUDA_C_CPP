@@ -1,61 +1,78 @@
-#include "common.h"
-#include "gpu_register_test.h"
+// gpu_register_test.cu
 #include <cuda_runtime.h>
 #include <cstdio>
 
 template<int REG>
-__global__ void compute_add_kernel(int N) {
-    int idx = threadIdx.x + blockIdx.x * blockDim.x;
-
-    int r[REG];
+__global__ void compute_add_kernel()
+{
+    float r[REG];
     #pragma unroll
-    for (int i = 0; i < REG; i++)
-        r[i] = idx + i;
+    for (int i = 0; i < REG; i++) r[i] = 1.0f;
 
-    size_t stride = blockDim.x * gridDim.x;
-    for (size_t i = idx; i < N; i += stride) {
+    constexpr int INNER_ITERS = 4096;
+
+    #pragma unroll 1
+    for (int it = 0; it < INNER_ITERS; it++) {
         #pragma unroll
-        for (int j = 0; j < REG; j++)
-            r[j] += 1;
+        for (int j = 0; j < REG; j++) {
+            r[j] += 1.0f;
+        }
     }
 
-    int tmp = 0;
-    #pragma unroll
-    for (int j = 0; j < REG; j++)
-        tmp += r[j];
-
-    volatile int sink = tmp;   // single volatile store
+    // Prevent dead-code elimination
+    volatile float sink = r[0];
+    (void)sink;
 }
 
-void run_compute_benchmark(int N){
-    int threads=512, blocks=48;
-    int regs[]={8,16,32,48,64,128,256};
+template<int REG>
+void run_compute_test(int threads, int blocks)
+{
+    constexpr int ITERS = 100;
+
+    // Warm-up
+    compute_add_kernel<REG><<<blocks, threads>>>();
+    cudaDeviceSynchronize();
+
+    cudaEvent_t start, stop;
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
+
+    cudaEventRecord(start);
+    for (int i = 0; i < ITERS; i++) {
+        compute_add_kernel<REG><<<blocks, threads>>>();
+    }
+    cudaEventRecord(stop);
+    cudaEventSynchronize(stop);
+
+    float ms;
+    cudaEventElapsedTime(&ms, start, stop);
+    ms /= ITERS;
+
+    double adds =
+        double(blocks) * threads *
+        REG * 4096;  // INNER_ITERS
+
+    double gops = adds / (ms * 1e6);
+
+    printf("%8d %8d %8d %10.3f %12.2f\n",
+           REG, threads, blocks, ms, gops);
+}
+
+void run_gpu_register_tests()
+{
+    const int THREADS = 512;
+    const int BLOCKS  = 48;
 
     printf("\n--- Compute-bound GPU ADD ---\n");
-    printf("    Regs  Threads   Blocks   Time(ms)       Gops/s\n");
+    printf("%8s %8s %8s %10s %12s\n",
+           "Regs", "Threads", "Blocks", "Time(ms)", "Gops/s");
 
-    for(int r=0;r<sizeof(regs)/sizeof(int);r++){
-        float ms;
-        cudaEvent_t start, stop;
-        cudaEventCreate(&start);
-        cudaEventCreate(&stop);
-
-        cudaEventRecord(start);
-        switch(regs[r]){
-            case 8:  compute_add_kernel<8><<<blocks,threads>>>(N); break;
-            case 16: compute_add_kernel<16><<<blocks,threads>>>(N); break;
-            case 32: compute_add_kernel<32><<<blocks,threads>>>(N); break;
-            case 48: compute_add_kernel<48><<<blocks,threads>>>(N); break;
-            case 64: compute_add_kernel<64><<<blocks,threads>>>(N); break;
-            case 128: compute_add_kernel<128><<<blocks,threads>>>(N); break;
-            case 256: compute_add_kernel<256><<<blocks,threads>>>(N); break;
-        }
-        cudaEventRecord(stop);
-        cudaEventSynchronize(stop);
-        cudaEventElapsedTime(&ms,start,stop);
-
-        double gops=double(N)/(ms/1000.0)/1e9;
-        printf("%8d %8d %8d %10.3f %12.2f\n",regs[r],threads,blocks,ms,gops);
-    }
+    run_compute_test<8>(THREADS, BLOCKS);
+    run_compute_test<16>(THREADS, BLOCKS);
+    run_compute_test<32>(THREADS, BLOCKS);
+    run_compute_test<48>(THREADS, BLOCKS);
+    run_compute_test<64>(THREADS, BLOCKS);
+    run_compute_test<128>(THREADS, BLOCKS);
+    run_compute_test<256>(THREADS, BLOCKS);
 }
 
