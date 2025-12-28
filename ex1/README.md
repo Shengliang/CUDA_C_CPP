@@ -20,6 +20,56 @@ Verify:
 
 ```powershell
 nvidia-smi
+
+PS C:\> .\Windows\System32\nvidia-smi.exe
+Sat Dec 27 17:10:16 2025
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 591.44                 Driver Version: 591.44         CUDA Version: 13.1     |
++-----------------------------------------+------------------------+----------------------+
+| GPU  Name                  Driver-Model | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA GeForce RTX 5070      WDDM  |   00000000:01:00.0  On |                  N/A |
+|  0%   34C    P8              8W /  250W |     749MiB /  12227MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|    0   N/A  N/A            2308    C+G   ...IA App\CEF\NVIDIA Overlay.exe      N/A      |
+|    0   N/A  N/A            2896    C+G   ...Chrome\Application\chrome.exe      N/A      |
+|    0   N/A  N/A            3336    C+G   ...em32\ApplicationFrameHost.exe      N/A      |
+|    0   N/A  N/A            8860    C+G   ...roadcast\NVIDIA Broadcast.exe      N/A      |
+|    0   N/A  N/A            9888    C+G   ...y\StartMenuExperienceHost.exe      N/A      |
+|    0   N/A  N/A           11400    C+G   ...2txyewy\CrossDeviceResume.exe      N/A      |
+|    0   N/A  N/A           12880    C+G   ...Files\LM Studio\LM Studio.exe      N/A      |
+|    0   N/A  N/A           12944    C+G   ...64__8wekyb3d8bbwe\Copilot.exe      N/A      |
+|    0   N/A  N/A           13132    C+G   ...ms\Microsoft VS Code\Code.exe      N/A      |
+|    0   N/A  N/A           13392    C+G   ...__kzh8wxbdkxb8p\DCv2\DCv2.exe      N/A      |
+|    0   N/A  N/A           14980    C+G   ....0.3650.96\msedgewebview2.exe      N/A      |
+|    0   N/A  N/A           15492    C+G   ...indows\System32\ShellHost.exe      N/A      |
+|    0   N/A  N/A           16952    C+G   ...5n1h2txyewy\TextInputHost.exe      N/A      |
+|    0   N/A  N/A           17532    C+G   ...pData\Local\Lark\app\Lark.exe      N/A      |
+|    0   N/A  N/A           18140    C+G   C:\Windows\explorer.exe               N/A      |
+|    0   N/A  N/A           18224    C+G   ...ntrolPanel\SystemSettings.exe      N/A      |
+|    0   N/A  N/A           19944    C+G   ...8wekyb3d8bbwe\M365Copilot.exe      N/A      |
+|    0   N/A  N/A           20540    C+G   ...t\Edge\Application\msedge.exe      N/A      |
+|    0   N/A  N/A           20964      C   ...Files\LM Studio\LM Studio.exe      N/A      |
+|    0   N/A  N/A           22420    C+G   ...yb3d8bbwe\WindowsTerminal.exe      N/A      |
+|    0   N/A  N/A           22812    C+G   ...IA App\CEF\NVIDIA Overlay.exe      N/A      |
+|    0   N/A  N/A           23020    C+G   ....0.3650.96\msedgewebview2.exe      N/A      |
+|    0   N/A  N/A           23068    C+G   ....0.3650.96\msedgewebview2.exe      N/A      |
+|    0   N/A  N/A           24412    C+G   ...8bbwe\PhoneExperienceHost.exe      N/A      |
+|    0   N/A  N/A           25912    C+G   ...App_cw5n1h2txyewy\LockApp.exe      N/A      |
+|    0   N/A  N/A           26576    C+G   ..._cw5n1h2txyewy\SearchHost.exe      N/A      |
+|    0   N/A  N/A           27660    C+G   ...crosoft\OneDrive\OneDrive.exe      N/A      |
+|    0   N/A  N/A           29036    C+G   ...Chrome\Application\chrome.exe      N/A      |
+|    0   N/A  N/A           31188    C+G   ....0.3650.96\msedgewebview2.exe      N/A      |
++-----------------------------------------------------------------------------------------+
 ```
 
 ---
